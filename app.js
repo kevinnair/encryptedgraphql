@@ -8,7 +8,7 @@ const {
 
 const app = express();
 
-const events = ['one default event', 'another default event'];
+const events = [];
 
 app.use(bodyParser.json());
 
@@ -18,8 +18,8 @@ app.use('/graphql', graphQLHttp({
       _id: ID!
       title: String!
       description: String!
-      price: Float
-      date: String
+      price: Float!
+      date: String!
     }
 
     input EventInput {
@@ -56,7 +56,7 @@ app.use('/graphql', graphQLHttp({
       };
 
       events.push(event);
-      return events;
+      return event;
     }
   },
   graphiql: true
