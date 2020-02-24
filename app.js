@@ -81,7 +81,6 @@ app.use('/graphql', graphQLHttp({
       return event.save().then((res) => {
         return { ...res._doc, _id: res.id };
       }).catch((err) => {
-        console.log(err);
         throw err;
       });
     },
