@@ -6,6 +6,12 @@ const {
 
  } = require('graphql');
 
+ const mongoose = require('mongoose');
+ const bcrypt = require('bcryptjs');
+
+ const Event = require('./models/event');
+ const User = require('./models/user');
+
 const app = express();
 
 const events = [];
@@ -22,6 +28,17 @@ app.use('/graphql', graphQLHttp({
       date: String!
     }
 
+    type User {
+      _id: ID!
+      email: String!
+      password: String
+    }
+
+    input UserInput {
+      email: String!
+      password: String!
+    }
+
     input EventInput {
       title: String!
       description: String!
@@ -35,6 +52,7 @@ app.use('/graphql', graphQLHttp({
 
     type RootMutation {
       createEvent(eventInput: EventInput): Event
+      createUser(userInput: UserInput): User
     }
 
     schema {
@@ -44,24 +62,49 @@ app.use('/graphql', graphQLHttp({
   `),
   rootValue: {
     events: () => {
-      return events;
+      return Event.find().then((events) => {
+        return events.map((event) => {
+          return { ...event._doc, _id: event._doc._id.toString() };
+        });
+      }).catch((err) => {
+        throw err;
+      });
     },
     createEvent: (args) => {
-      const event = {
-        _id: Math.random().toString(),
+      const event = new Event({
         title: args.eventInput.title,
         description: args.eventInput.description,
         price: +args.eventInput.price,
-        date: new Date().toISOString()
-      };
+        date: new Date(args.eventInput.date)
+      });
 
-      events.push(event);
-      return event;
+      return event.save().then((res) => {
+        return { ...res._doc, _id: res.id };
+      }).catch((err) => {
+        console.log(err);
+        throw err;
+      });
+    },
+    createUser: (args) => {
+      return bcrypt.hash(args.userInput.password, 12).then((hashedPassword) => {
+        const user = new User({
+          email: args.userInput.email,
+          password: hashedPassword
+        });
+        return user.save();
+      }).then((result) => {
+        return { ...result._doc, password: null, _id: result.id };
+      }).catch((err) => {
+        throw err;
+      });
     }
   },
   graphiql: true
 }));
 
+mongoose.connect(`mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@clusterkmo-xdscm.mongodb.net/${process.env.MONGO_DB}?retryWrites=true&w=majority`, { useNewUrlParser: true }).then(() => {
+  app.listen(3009);
+}).catch((err) => {
+  console.log(err);
+});
 
-
-app.listen(3009);
