@@ -78,14 +78,25 @@ app.use('/graphql', graphQLHttp({
         title: args.eventInput.title,
         description: args.eventInput.description,
         price: +args.eventInput.price,
-        date: new Date(args.eventInput.date)
+        date: new Date(args.eventInput.date),
+        creator: process.env.MONGO_TEST_USER_ID
       });
 
+      let createdEvent;
       return event.save().then((res) => {
-        return {
+        createdEvent = {
           ...res._doc,
           _id: res.id
         };
+        return User.findById(process.env.MONGO_TEST_USER_ID);
+      }).then((user) => {
+        if(!user) {
+          throw new Error('User not found.');
+        }
+        user.createdEvents.push(event);
+        return user.save();
+      }).then((user) => {
+        return createdEvent;
       }).catch((err) => {
         throw err;
       });
