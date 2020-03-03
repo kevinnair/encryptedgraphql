@@ -26,7 +26,7 @@ const events = async (eventIds) => {
   try {
     const events = await Event.find({_id: {$in: eventIds}});
     return events.map((event) => {
-        return { ...event._doc, _id: event.id, date: new Date(event._doc.date).toISOString(), creator: user.bind(this, event.creator) };
+      return { ...event._doc, _id: event.id, date: new Date(event._doc.date).toISOString(), creator: user.bind(this, event.creator) };
     });
   } catch(err) {
     throw err;
@@ -34,113 +34,113 @@ const events = async (eventIds) => {
 };
 
 module.exports = {
-    events: async () => {
-      try {
-        const events = await Event.find();
-        return events.map((event) => {
-          return {
-            ...event._doc,
-            _id: event.id,
-            date: new Date(event._doc.date).toISOString(),
-            creator: user.bind(this, event._doc.creator)
-          };
-        });
-      } catch(err) {
-        throw err;
-      }
-    },
-    bookings: async () => {
-      try {
-        const bookings = await Booking.find();
-        return bookings.map((booking) => {
-          return {
-            ...booking._doc,
-            _id: booking.id,
-            user: user.bind(this, booking._doc.user),
-            event: singleEvent.bind(this, booking._doc.event),
-            createdAt: new Date(booking._doc.createdAt).toISOString(),
-            updatedAt: new Date(booking._doc.updatedAt).toISOString()
-          };
-        });
-      } catch(err) {
-        throw err;
-      }
-    },
-    createEvent: async (args) => {
-      let createdEvent;
-      const event = new Event({
-        title: args.eventInput.title,
-        description: args.eventInput.description,
-        price: +args.eventInput.price,
-        date: new Date(args.eventInput.date),
-        creator: process.env.MONGO_TEST_USER_ID
-      });
-
-      try {
-        const res = await event.save();
-        createdEvent = {
-          ...res._doc,
-          _id: res.id,
-          creator: user.bind(this, res._doc.creator)
-        };
-
-        const creator = await User.findById(process.env.MONGO_TEST_USER_ID);
-        if(!creator) {
-          throw new Error('User not found.');
-        }
-
-        creator.createdEvents.push(event);
-        await creator.save();
-        return createdEvent;
-      } catch(err) {
-        throw err;
-      }
-    },
-    createUser: async (args) => {
-      try {
-        const usr = await User.findOne({ email: args.userInput.email });
-        if(usr) {
-          throw new Error('User exists already.');
-        }
-        const hashedPassword = await bcrypt.hash(args.userInput.password, 12);
-        const updatedUser = new User({
-          email: args.userInput.email,
-          password: hashedPassword.toString()
-        });
-        const result = await updatedUser.save();
-        return { ...result._doc, password: null, _id: result.id };
-      } catch(err) {
-        throw err;
-      }
-    },
-    bookEvent: async (args) => {
-      try {
-        const fetchedEvent = await Event.findOne({_id: args.eventId});
-        const booking = new Booking({
-          user: process.env.MONGO_TEST_USER_ID,
-          event: fetchedEvent
-        });
-        const result = await booking.save();
+  events: async () => {
+    try {
+      const events = await Event.find();
+      return events.map((event) => {
         return {
-          ...result._doc,
-          _id: result.id,
-          user: user.bind(this, result._doc.user),
-          event: singleEvent.bind(this, result._doc.event),
+          ...event._doc,
+          _id: event.id,
+          date: new Date(event._doc.date).toISOString(),
+          creator: user.bind(this, event._doc.creator)
+        };
+      });
+    } catch(err) {
+      throw err;
+    }
+  },
+  bookings: async () => {
+    try {
+      const bookings = await Booking.find();
+      return bookings.map((booking) => {
+        return {
+          ...booking._doc,
+          _id: booking.id,
+          user: user.bind(this, booking._doc.user),
+          event: singleEvent.bind(this, booking._doc.event),
           createdAt: new Date(booking._doc.createdAt).toISOString(),
           updatedAt: new Date(booking._doc.updatedAt).toISOString()
         };
-      } catch (err) {
-        throw err;
-      }
-    },
-    cancelBooking: async (args) => {
-      try {
-        const booking = await Booking.findById(args.bookingId).populate('event');
-        const event = { ...booking.event._doc, _id: booking.event.id, creator: user.bind(this, booking.event._doc.creator) };
-        await Booking.deleteOne({ _id: args.bookingId });
-        return event;
-      } catch(err) {
-        throw err;
-      }
+      });
+    } catch(err) {
+      throw err;
     }
-  };
+  },
+  createEvent: async (args) => {
+    let createdEvent;
+    const event = new Event({
+      title: args.eventInput.title,
+      description: args.eventInput.description,
+      price: +args.eventInput.price,
+      date: new Date(args.eventInput.date),
+      creator: process.env.MONGO_TEST_USER_ID
+    });
+
+    try {
+      const res = await event.save();
+      createdEvent = {
+        ...res._doc,
+        _id: res.id,
+        creator: user.bind(this, res._doc.creator)
+      };
+
+      const creator = await User.findById(process.env.MONGO_TEST_USER_ID);
+      if(!creator) {
+        throw new Error('User not found.');
+      }
+
+      creator.createdEvents.push(event);
+      await creator.save();
+      return createdEvent;
+    } catch(err) {
+      throw err;
+    }
+  },
+  createUser: async (args) => {
+    try {
+      const usr = await User.findOne({ email: args.userInput.email });
+      if(usr) {
+        throw new Error('User exists already.');
+      }
+      const hashedPassword = await bcrypt.hash(args.userInput.password, 12);
+      const updatedUser = new User({
+        email: args.userInput.email,
+        password: hashedPassword.toString()
+      });
+      const result = await updatedUser.save();
+      return { ...result._doc, password: null, _id: result.id };
+    } catch(err) {
+      throw err;
+    }
+  },
+  bookEvent: async (args) => {
+    try {
+      const fetchedEvent = await Event.findOne({_id: args.eventId});
+      const booking = new Booking({
+        user: process.env.MONGO_TEST_USER_ID,
+        event: fetchedEvent
+      });
+      const result = await booking.save();
+      return {
+        ...result._doc,
+        _id: result.id,
+        user: user.bind(this, result._doc.user),
+        event: singleEvent.bind(this, result._doc.event),
+        createdAt: new Date(booking._doc.createdAt).toISOString(),
+        updatedAt: new Date(booking._doc.updatedAt).toISOString()
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+  cancelBooking: async (args) => {
+    try {
+      const booking = await Booking.findById(args.bookingId).populate('event');
+      const event = { ...booking.event._doc, _id: booking.event.id, creator: user.bind(this, booking.event._doc.creator) };
+      await Booking.deleteOne({ _id: args.bookingId });
+      return event;
+    } catch(err) {
+      throw err;
+    }
+  }
+};
